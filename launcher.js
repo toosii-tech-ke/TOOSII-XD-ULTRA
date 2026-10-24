@@ -91,6 +91,12 @@ function install(bundleDir) {
 // installs them at the root. The launcher only installs inside runtime/ as a
 // last-resort fallback when the panel skipped its install step entirely.
 function ensureDependencies() {
+    // A stale bundled node_modules from an earlier install SHADOWS the root
+    // install (Node resolves from the nearest node_modules first) and can hold
+    // broken packages (seen live: p-queue ESM mismatch crashed Baileys).
+    // Remove it on every start, not only on swap — "up to date" starts never
+    // reach install().
+    fs.rmSync(path.join(RUNTIME_DIR, 'node_modules'), { recursive: true, force: true });
     const probe = path.join(ROOT, 'node_modules', '@whiskeysockets', 'baileys', 'package.json');
     if (fs.existsSync(probe)) return;
     log('dependencies missing — installing (one-time, may take a few minutes)...');
