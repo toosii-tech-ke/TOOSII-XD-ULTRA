@@ -87,6 +87,31 @@ function install(bundleDir) {
     try { execSync('node scripts/postinstall.js', { cwd: RUNTIME_DIR, stdio: 'ignore', timeout: 300000 }); } catch {}
 }
 
+// The bundle does not ship node_modules, and panels only install the
+// launcher's own (dependency-free) package.json — so the runtime's real
+// dependencies must be installed here. Runs when the key module is missing
+// or after a fresh runtime swap where the lifted modules are absent.
+function ensureDependencies() {
+    const probe = path.join(ROOT, 'node_modules', '@whiskeysockets', 'baileys', 'package.json');
+    if (fs.existsSync(probe)) return;
+    log('installing runtime dependencies (one-time)...');
+    try {
+        execSync('npm install --no-audit --no-fund --maxsockets 3', {
+            cwd: RUNTIME_DIR, stdio: 'inherit', timeout: 600000
+        });
+        // Lift node_modules to the root so later runtime swaps keep them.
+        const bundled = path.join(RUNTIME_DIR, 'node_modules');
+        const rootNm = path.join(ROOT, 'node_modules');
+        if (fs.existsSync(bundled) && !fs.existsSync(rootNm)) {
+            try { fs.renameSync(bundled, rootNm); } catch { /* keep in runtime */ }
+        }
+        log('dependencies installed');
+    } catch (err) {
+        console.error('[launcher] dependency install failed:', err.message);
+        console.error('[launcher] the bot will likely fail to start — check panel network/npm settings');
+    }
+}
+
 function ensureStateDirs() {
     for (const dir of STATE_DIRS) {
         const p = path.join(ROOT, dir);
@@ -138,6 +163,9 @@ function start() {
     // and by relative './session' paths resolved from the runtime's parent —
     // run with cwd at the root so './session', './data', './logs' land here.
     process.chdir(ROOT);
+    // State dirs live at the root; node must resolve modules from there too.
+    module.paths.unshift(path.join(ROOT, 'node_modules'));
+    ensureDependencies();
     ensureStateDirs();
     require(path.join(RUNTIME_DIR, 'index.js'));
 }
