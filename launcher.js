@@ -21,11 +21,21 @@ function readLocalVersion() {
 }
 
 async function fetchLatest() {
-    const res = await fetch(`${API_BASE}/api/v1/bot/latest`, {
-        signal: AbortSignal.timeout(120000),
-    });
-    if (!res.ok) throw new Error(`distribution API HTTP ${res.status}`);
-    return res.json(); // { version, url, sha256 }
+    // The bundle ships as a release asset on the public repo — a plain
+    // HTTPS URL, no token, no API hop.
+    const res = await fetch(
+        'https://api.github.com/repos/toosii-tech-ke/TOOSII-XD-ULTRA/releases/latest',
+        { headers: { 'User-Agent': 'toosii-xd-launcher' }, signal: AbortSignal.timeout(60000) }
+    );
+    if (!res.ok) throw new Error(`release check HTTP ${res.status}`);
+    const rel = await res.json();
+    const asset = (rel.assets || [])[0];
+    if (!asset) throw new Error('no bundle published yet');
+    return {
+        version: rel.tag_name,
+        url: asset.browser_download_url,
+        sha256: (rel.body || '').match(/sha256:\s*([a-f0-9]{64})/i)?.[1] || null,
+    };
 }
 
 async function download(url, dest) {
