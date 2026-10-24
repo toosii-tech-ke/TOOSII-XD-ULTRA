@@ -1,0 +1,12 @@
+{
+  "name": "toosii-xd-ultra",
+  "version": "1.0.0",
+  "description": "Toosii-XD-Ultra WhatsApp bot — self-updating launcher",
+  "main": "launcher.js",
+  "scripts": {
+    "start": "node launcher.js",
+    "deploy": "npm install --no-audit --no-fund --legacy-peer-deps && node launcher.js"
+  },
+  "engines": { "node": ">=20" },
+  "license": "MIT"
+}
