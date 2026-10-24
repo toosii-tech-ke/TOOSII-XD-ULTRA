@@ -63,13 +63,12 @@ function install(bundleDir) {
     fs.rmSync(RUNTIME_DIR, { recursive: true, force: true });
     fs.renameSync(bundleDir, RUNTIME_DIR);
 
-    // Lift the bot's node_modules to the root on first install so deps
-    // survive updates (the bundle's own copy is removed with the old runtime).
-    const bundledModules = path.join(RUNTIME_DIR, 'node_modules');
-    const rootModules = path.join(ROOT, 'node_modules');
-    if (fs.existsSync(bundledModules) && !fs.existsSync(rootModules)) {
-        try { fs.renameSync(bundledModules, rootModules); } catch { /* keep bundled copy */ }
-    }
+    // Remove the bundle's node_modules: the panel installs the real
+    // dependencies at the root (from the launcher's package.json), and a
+    // partial/bundled copy here would SHADOW it — Node resolves from the
+    // nearest node_modules first, and the bundled one can hold broken
+    // packages (seen live: p-queue ESM mismatch crashing Baileys on start).
+    fs.rmSync(path.join(RUNTIME_DIR, 'node_modules'), { recursive: true, force: true });
 
     // First run: seed the runtime's .env from the user's root .env (the file
     // they edited) or the bundle's .env.example. Later runs never overwrite.
