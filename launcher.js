@@ -22,7 +22,6 @@ function readLocalVersion() {
 
 async function fetchLatest() {
     const res = await fetch(`${API_BASE}/api/v1/bot/latest`, {
-        headers: { 'x-api-key': process.env.TOOSII_TECH_API_TOKEN || '' },
         signal: AbortSignal.timeout(120000),
     });
     if (!res.ok) throw new Error(`distribution API HTTP ${res.status}`);
