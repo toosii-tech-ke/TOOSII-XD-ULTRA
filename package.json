@@ -7,6 +7,17 @@
     "start": "node launcher.js",
     "deploy": "npm install --no-audit --no-fund --legacy-peer-deps && node launcher.js"
   },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "canvas": "^3.2.3",
+    "chalk": "^4.1.2",
+    "dotenv": "^16.4.5",
+    "node-webpmux": "^3.2.1",
+    "pino": "^9.4.0",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.35.5",
+    "wa-sticker-formatter": "^4.4.4"
+  },
   "engines": { "node": ">=20" },
   "license": "MIT"
 }

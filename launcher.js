@@ -87,24 +87,18 @@ function install(bundleDir) {
     try { execSync('node scripts/postinstall.js', { cwd: RUNTIME_DIR, stdio: 'ignore', timeout: 300000 }); } catch {}
 }
 
-// The bundle does not ship node_modules, and panels only install the
-// launcher's own (dependency-free) package.json — so the runtime's real
-// dependencies must be installed here. Runs when the key module is missing
-// or after a fresh runtime swap where the lifted modules are absent.
+// The runtime's dependencies are declared in THIS launcher's package.json, so
+// the panel's own "npm install" step (fast, cached, runs before startup)
+// installs them at the root. The launcher only installs inside runtime/ as a
+// last-resort fallback when the panel skipped its install step entirely.
 function ensureDependencies() {
     const probe = path.join(ROOT, 'node_modules', '@whiskeysockets', 'baileys', 'package.json');
     if (fs.existsSync(probe)) return;
-    log('installing runtime dependencies (one-time)...');
+    log('dependencies missing — installing (one-time, may take a few minutes)...');
     try {
-        execSync('npm install --no-audit --no-fund --maxsockets 3', {
-            cwd: RUNTIME_DIR, stdio: 'inherit', timeout: 600000
+        execSync('npm install --no-audit --no-fund --legacy-peer-deps --maxsockets 3', {
+            cwd: ROOT, stdio: 'inherit', timeout: 900000
         });
-        // Lift node_modules to the root so later runtime swaps keep them.
-        const bundled = path.join(RUNTIME_DIR, 'node_modules');
-        const rootNm = path.join(ROOT, 'node_modules');
-        if (fs.existsSync(bundled) && !fs.existsSync(rootNm)) {
-            try { fs.renameSync(bundled, rootNm); } catch { /* keep in runtime */ }
-        }
         log('dependencies installed');
     } catch (err) {
         console.error('[launcher] dependency install failed:', err.message);
