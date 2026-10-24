@@ -3,6 +3,12 @@
 // Toosii Tech distribution API, swaps it in, and starts the bot.
 // The full source lives in the private repository; this launcher only
 // downloads and runs it, so it stays tiny and dependency-free.
+//
+// Layout on the panel — the root stays clean:
+//   launcher.js, package.json, .env   <- what the user sees and edits
+//   runtime/                          <- the downloaded bot (index.js, commands/, lib/, ...)
+//   session/, data/, logs/            <- user state, never touched by updates
+//   runtime.json                      <- local version marker
 
 const fs = require('fs');
 const path = require('path');
@@ -10,13 +16,16 @@ const os = require('os');
 const { execSync } = require('child_process');
 
 const ROOT = __dirname;
+const RUNTIME_DIR = path.join(ROOT, 'runtime');
+const RUNTIME_MARKER = path.join(ROOT, 'runtime.json');
 const API_BASE = process.env.DIST_API_BASE || 'https://toosiitechdevelopertools.zone.id';
-const PRESERVE = new Set(['node_modules', 'data', 'session', '.env', 'logs', 'runtime', 'runtime.json']);
+// User state lives at the root, outside runtime/, so updates can never touch it.
+const STATE_DIRS = ['node_modules', 'data', 'session', 'logs'];
 
 function log(...a) { console.log('[launcher]', ...a); }
 
 function readLocalVersion() {
-    try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'runtime.json'), 'utf8')).version || '0'; }
+    try { return JSON.parse(fs.readFileSync(RUNTIME_MARKER, 'utf8')).version || '0'; }
     catch { return '0'; }
 }
 
@@ -48,22 +57,41 @@ function sha256(file) {
     return require('crypto').createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
-function swap(bundleDir) {
-    // Runtime state survives every update: session, data, env, logs, deps.
-    for (const entry of fs.readdirSync(bundleDir)) {
-        if (PRESERVE.has(entry)) continue;
-        const dest = path.join(ROOT, entry);
-        fs.rmSync(dest, { recursive: true, force: true });
-        fs.renameSync(path.join(bundleDir, entry), dest);
+function install(bundleDir) {
+    // Replace the runtime wholesale — user state is not inside runtime/, so
+    // there is nothing to preserve here by definition.
+    fs.rmSync(RUNTIME_DIR, { recursive: true, force: true });
+    fs.renameSync(bundleDir, RUNTIME_DIR);
+
+    // Lift the bot's node_modules to the root on first install so deps
+    // survive updates (the bundle's own copy is removed with the old runtime).
+    const bundledModules = path.join(RUNTIME_DIR, 'node_modules');
+    const rootModules = path.join(ROOT, 'node_modules');
+    if (fs.existsSync(bundledModules) && !fs.existsSync(rootModules)) {
+        try { fs.renameSync(bundledModules, rootModules); } catch { /* keep bundled copy */ }
     }
-    for (const entry of fs.readdirSync(bundleDir)) {
-        if (!PRESERVE.has(entry)) continue;
-        const dest = path.join(ROOT, entry);
-        if (fs.existsSync(dest)) continue; // first run only
-        fs.cpSync(path.join(bundleDir, entry), dest, { recursive: true });
+
+    // First run: seed the runtime's .env from the user's root .env (the file
+    // they edited) or the bundle's .env.example. Later runs never overwrite.
+    const runtimeEnv = path.join(RUNTIME_DIR, '.env');
+    if (!fs.existsSync(runtimeEnv)) {
+        const userEnv = path.join(ROOT, '.env');
+        const exampleEnv = path.join(RUNTIME_DIR, '.env.example');
+        try {
+            if (fs.existsSync(userEnv)) fs.copyFileSync(userEnv, runtimeEnv);
+            else if (fs.existsSync(exampleEnv)) fs.copyFileSync(exampleEnv, runtimeEnv);
+        } catch { /* read-only fs — bot falls back to defaults + pairing prompt */ }
     }
+
     // Native module repair for panels that skip install scripts.
-    try { execSync('node scripts/postinstall.js', { cwd: ROOT, stdio: 'ignore', timeout: 300000 }); } catch {}
+    try { execSync('node scripts/postinstall.js', { cwd: RUNTIME_DIR, stdio: 'ignore', timeout: 300000 }); } catch {}
+}
+
+function ensureStateDirs() {
+    for (const dir of STATE_DIRS) {
+        const p = path.join(ROOT, dir);
+        if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+    }
 }
 
 async function main() {
@@ -75,10 +103,10 @@ async function main() {
         latest = await fetchLatest();
     } catch (err) {
         log('update check failed:', err.message);
-        if (fs.existsSync(path.join(ROOT, 'index.js'))) return start();
+        if (fs.existsSync(path.join(RUNTIME_DIR, 'index.js'))) return start();
         throw err; // nothing to run at all
     }
-    if (String(latest.version) === String(local) && fs.existsSync(path.join(ROOT, 'index.js'))) {
+    if (String(latest.version) === String(local) && fs.existsSync(path.join(RUNTIME_DIR, 'index.js'))) {
         log('up to date at', local);
         return start();
     }
@@ -92,8 +120,8 @@ async function main() {
         execSync(`cd "${tmp}" && unzip -oq bundle.zip`, { stdio: 'ignore', timeout: 120000 });
         const inner = fs.readdirSync(tmp).find((f) => fs.statSync(path.join(tmp, f)).isDirectory());
         if (!inner) throw new Error('bundle layout unexpected');
-        swap(path.join(tmp, inner));
-        fs.writeFileSync(path.join(ROOT, 'runtime.json'), JSON.stringify({ version: latest.version, at: new Date().toISOString() }));
+        install(path.join(tmp, inner));
+        fs.writeFileSync(RUNTIME_MARKER, JSON.stringify({ version: latest.version, at: new Date().toISOString() }));
         log('updated to', latest.version);
     } finally {
         fs.rmSync(tmp, { recursive: true, force: true });
@@ -102,11 +130,16 @@ async function main() {
 }
 
 function start() {
-    if (!fs.existsSync(path.join(ROOT, 'index.js'))) {
+    if (!fs.existsSync(path.join(RUNTIME_DIR, 'index.js'))) {
         console.error('[launcher] No runtime found and the distribution API is unreachable. Set DIST_API_BASE/TOOSII_TECH_API_TOKEN correctly, then restart.');
         process.exit(1);
     }
-    require(path.join(ROOT, 'index.js'));
+    // State dirs are pointed at by the bot via SESSION_DIR-style env overrides
+    // and by relative './session' paths resolved from the runtime's parent —
+    // run with cwd at the root so './session', './data', './logs' land here.
+    process.chdir(ROOT);
+    ensureStateDirs();
+    require(path.join(RUNTIME_DIR, 'index.js'));
 }
 
 main().catch((err) => {
