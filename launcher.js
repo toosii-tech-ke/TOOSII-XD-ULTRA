@@ -24,6 +24,33 @@ const STATE_DIRS = ['node_modules', 'data', 'session', 'logs'];
 
 function log(...a) { console.log('[launcher]', ...a); }
 
+const LAUNCHER_VERSION = '2'; // bump when launcher.js itself changes
+const LAUNCHER_TAG_FILE = path.join(ROOT, '.launcher-version');
+
+// Self-update: the bundle ships a copy of the latest launcher.js. On boot,
+// compare versions and replace this file in place — so launcher fixes reach
+// panels without manual re-uploads. The replacement takes effect on the next
+// process start (or the next in-process restart handoff).
+async function selfUpdate() {
+    try {
+        const tag = fs.readFileSync(LAUNCHER_TAG_FILE, 'utf8').trim();
+        if (tag === LAUNCHER_VERSION) return;
+        const bundled = path.join(RUNTIME_DIR, 'launcher.js');
+        if (!fs.existsSync(bundled)) return;
+        const src = fs.readFileSync(bundled, 'utf8');
+        if (src.includes(`LAUNCHER_VERSION = '${LAUNCHER_VERSION}'`)) {
+            // Bundle already carries this version's launcher — nothing to do.
+            fs.writeFileSync(LAUNCHER_TAG_FILE, LAUNCHER_VERSION);
+            return;
+        }
+        fs.writeFileSync(__filename, src);
+        fs.writeFileSync(LAUNCHER_TAG_FILE, LAUNCHER_VERSION);
+        log('launcher updated from bundle — restarts will use the new logic');
+    } catch (err) {
+        log('launcher self-update skipped:', err.message);
+    }
+}
+
 function readLocalVersion() {
     try { return JSON.parse(fs.readFileSync(RUNTIME_MARKER, 'utf8')).version || '0'; }
     catch { return '0'; }
@@ -119,6 +146,7 @@ function ensureStateDirs() {
 }
 
 async function main() {
+    await selfUpdate();
     if (process.env.LAUNCHER_SKIP_UPDATE === 'true') return start();
 
     const local = readLocalVersion();
