@@ -169,6 +169,45 @@ function start() {
     require(path.join(RUNTIME_DIR, 'index.js'));
 }
 
+// The runtime bot runs IN this process (require'd above). On KataBump the
+// container stops when the main process exits, and the panel's auto-restart
+// aborts if the process dies shortly after starting — so a plain
+// process.exit() from the bot's .restart left the server offline for good.
+//
+// Fix: the bot's .restart writes data/.restart-requested and calls
+// process.exit — but BEFORE exiting it ends its WhatsApp connection. The
+// launcher detects a CLEAN shutdown (no error) and re-runs the runtime
+// in this same process, so the panel process never dies and never goes
+// offline. A CRASH (uncaught error) still exits the launcher so the panel
+// reports the failure honestly.
+let restarting = false;
+process.on('exit', (code) => {
+    if (restarting) console.log('[launcher] restart handoff — respawning runtime...');
+});
+
+function requestRestart() {
+    restarting = true;
+    // Give logs a beat to flush, then re-run the whole runtime fresh in
+    // this process. Module cache is wiped so the new runtime/ (e.g. right
+    // after an update) is picked up cleanly.
+    setTimeout(() => {
+        try {
+            for (const key of Object.keys(require.cache)) {
+                if (key.startsWith(RUNTIME_DIR)) delete require.cache[key];
+            }
+            console.log('[launcher] restarting runtime...');
+            require(path.join(RUNTIME_DIR, 'index.js'));
+        } catch (err) {
+            console.error('[launcher] runtime restart failed:', err.message);
+            process.exit(1);
+        }
+    }, 3000);
+}
+
+// The runtime signals a restart request by setting this global before it
+// exits (its .restart command does that instead of a bare process.exit).
+global.__TOOSII_RESTART_HOOK__ = requestRestart;
+
 main().catch((err) => {
     console.error('[launcher] Fatal:', err.message);
     process.exit(1);
