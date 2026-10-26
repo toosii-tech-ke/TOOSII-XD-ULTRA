@@ -24,7 +24,7 @@ This is the **deployment launcher** for TOOSII-XD-ULTRA. Instead of downloading 
 - 📡 **Fetches the latest runtime** from the Toosii Tech distribution API on every start
 - 🔄 **Self-updating** — new bot versions arrive automatically, no manual redeploys
 - 🔐 **Keeps your data safe** — session, `.env`, data and logs survive every update untouched
-- ⚡ **One command to run** — `node launcher.js`
+- ⚡ **One command to run** — `node index.js` (or `node launcher.js` — both work)
 
 > 💡 The launcher pairs with the [Session Generator](https://toosiitechdevelopertools.zone.id/session) — pair your WhatsApp account in the browser and paste the `TOOSII-XD:...` string into `.env`.
 
@@ -39,6 +39,8 @@ This is the **deployment launcher** for TOOSII-XD-ULTRA. Instead of downloading 
    npm run deploy
    ```
 4. **Pair** — enter the pairing code shown in the console on your phone via **WhatsApp → Linked devices → Link with phone number**
+
+**Panel start command:** `node index.js` (or `npm start`). If your panel auto-detects the entry file, either `index.js` or `launcher.js` works — they're the same bot.
 
 The bot starts and stays current from here on — the launcher handles the rest.
 
