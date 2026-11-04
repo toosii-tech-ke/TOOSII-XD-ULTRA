@@ -32,15 +32,23 @@ This is the **deployment launcher** for TOOSII-XD-ULTRA. Instead of downloading 
 
 ## 🚀 Deploy
 
-### 📱 Termux — one copy-paste setup
+### 📱 Termux — easiest copy-paste setup
 
-Open **Termux** from the official [F-Droid](https://f-droid.org/packages/com.termux/) build, paste the complete command below, and enter the WhatsApp owner number when prompted. Use the international format with digits only — for example `254712345678` — and do not include `+` or spaces.
+Open **Termux** from the official [F-Droid](https://f-droid.org/packages/com.termux/) build and paste this **one command**. It installs the tools, downloads the public launcher, repairs the Termux Node.js linker problem if necessary, and opens the setup wizard:
 
 ```bash
-pkg update -y && pkg install -y git nodejs-lts unzip && if [ -d "$HOME/TOOSII-XD-ULTRA/.git" ]; then cd "$HOME/TOOSII-XD-ULTRA" && git pull --ff-only; else git clone --depth=1 https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA.git "$HOME/TOOSII-XD-ULTRA" && cd "$HOME/TOOSII-XD-ULTRA"; fi && OWNER_NUMBER=""; while [ -z "$OWNER_NUMBER" ]; do printf 'WhatsApp owner number (country code + number, digits only): '; read -r OWNER_NUMBER; OWNER_NUMBER="$(printf '%s' "$OWNER_NUMBER" | tr -cd '0-9')"; done; sed -i "s/^OWNER_NUMBER=.*/OWNER_NUMBER=$OWNER_NUMBER/" .env && npm run deploy
+pkg update -y && pkg install -y git curl unzip && if [ -d "$HOME/TOOSII-XD-ULTRA/.git" ]; then cd "$HOME/TOOSII-XD-ULTRA" && git pull --ff-only; else git clone --depth=1 https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA.git "$HOME/TOOSII-XD-ULTRA" && cd "$HOME/TOOSII-XD-ULTRA"; fi && bash scripts/repair-termux-node.sh && bash scripts/setup-termux.sh
 ```
 
-This command safely updates an existing checkout, installs the Termux prerequisites, writes `OWNER_NUMBER` into the local `.env`, installs the bot dependencies, downloads the latest signed runtime bundle, and starts the launcher. Your `session/`, `data/`, and `logs/` folders remain in the project directory between updates.
+When the wizard asks for the owner number, enter the country code and number with digits only. Example: `254712345678`. Do not type `+`, spaces, or brackets. When it asks for `SESSION_ID`, press **Enter** to use phone-number pairing, or paste a session string without showing it to anyone.
+
+The wizard can start the bot with automatic crash recovery. If you choose not to start it immediately, run:
+
+```bash
+cd ~/TOOSII-XD-ULTRA && bash scripts/termux-health-monitor.sh
+```
+
+Your `.env`, `session/`, `data/`, and `logs/` remain in the public launcher folder. The launcher downloads the current obfuscated runtime bundle published from the private source repository.
 
 **First pairing:** leave `SESSION_ID=` empty in `.env`. When the launcher prints a pairing code, open **WhatsApp → Linked devices → Link with phone number** on the owner phone and enter the code. Alternatively, generate a session at the [Toosii Session Generator](https://toosiitechdevelopertools.zone.id/session) and paste it into `.env` as `SESSION_ID=TOOSII-XD:...` before running the command.
 
