@@ -48,6 +48,18 @@ This command safely updates an existing checkout, installs the Termux prerequisi
 
 **If you already configured the bot:** run `cd ~/TOOSII-XD-ULTRA && npm start` to start it again without changing your `.env`.
 
+### 🔧 Forgot `OWNER_NUMBER` or need to change it?
+
+No reinstall is needed. Stop the running bot with **Ctrl+C**, then paste this recovery command in Termux. It creates the setting if it is missing, replaces it if it is wrong, and starts the bot again:
+
+```bash
+cd ~/TOOSII-XD-ULTRA && OWNER_NUMBER=""; while [ -z "$OWNER_NUMBER" ]; do printf 'Correct WhatsApp owner number (country code + number, digits only): '; read -r OWNER_NUMBER; OWNER_NUMBER="$(printf '%s' "$OWNER_NUMBER" | tr -cd '0-9')"; done; if grep -q '^OWNER_NUMBER=' .env; then sed -i "s/^OWNER_NUMBER=.*/OWNER_NUMBER=$OWNER_NUMBER/" .env; else printf '\nOWNER_NUMBER=%s\n' "$OWNER_NUMBER" >> .env; fi; printf 'Saved owner number: '; grep '^OWNER_NUMBER=' .env; npm start
+```
+
+The number must use international digits only, such as `254712345678` — no `+`, spaces, or brackets. This does **not** delete `SESSION_ID`, `session/`, `data/`, or `logs/`, so an existing WhatsApp session normally remains connected. If the bot asks for pairing again, use the displayed code from **WhatsApp → Linked devices → Link with phone number**.
+
+For manual editing instead, run `nano ~/TOOSII-XD-ULTRA/.env`, change the line to `OWNER_NUMBER=254712345678`, save with **Ctrl+O**, press **Enter**, exit with **Ctrl+X**, and start with `cd ~/TOOSII-XD-ULTRA && npm start`.
+
 1. **Upload** this repo as a ZIP to your hosting panel (KataBump, Render, Koyeb, Railway, Heroku, a VPS, or Termux)
 2. **Edit the included `.env`** — fill in `OWNER_NUMBER` (+ `SESSION_ID`, or leave empty to pair via console code)
 3. **Install & start:**
