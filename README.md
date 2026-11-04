@@ -92,7 +92,7 @@ When the new pairing code appears, link the owner phone through **WhatsApp → L
 </details>
 
 <details>
-<summary><strong>2 — No QR code or pairing code appears</strong></summary>
+<summary><strong>2 — No QR or pairing code appears</strong></summary>
 
 This launcher is primarily configured for WhatsApp **phone-number pairing**, so the normal output may be a pairing code rather than a QR image. Check the prerequisites and start the launcher in the foreground so the message cannot be missed:
 
@@ -144,6 +144,64 @@ The launcher downloads the latest runtime release and verifies its SHA-256 check
 
 **Still stuck?** Share the relevant lines from `logs/auth-start.log` or `logs/auth-recovery.log`, but remove `SESSION_ID`, phone numbers, cookies, and private tokens before sharing.
 
+### 🩺 Termux Node.js linker repair
+
+If Termux shows an error such as:
+
+```text
+CANNOT LINK EXECUTABLE "node": cannot locate symbol ...
+```
+
+Node.js is broken before the bot can even start. This is usually caused by a partial Termux upgrade or incompatible library environment. It is **not** a `SESSION_ID` error. Stop the bot and run the repair script below. It uses Bash and `apt`, so it works even when `node` and `npm` cannot run:
+
+```bash
+cd ~/TOOSII-XD-ULTRA && bash scripts/repair-termux-node.sh
+```
+
+The script unsets incompatible `LD_LIBRARY_PATH` and `LD_PRELOAD` values, finishes interrupted package configuration, repairs dependencies, upgrades Termux packages together, reinstalls `nodejs-lts` and `libc++`, and verifies `node --version` and `npm --version`. It never removes `.env`, `SESSION_ID`, `OWNER_NUMBER`, `session/`, `data/`, or `logs/`.
+
+If the repository is not available locally, download and run the repair script directly from the public repository:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/toosii-tech-ke/TOOSII-XD-ULTRA/main/scripts/repair-termux-node.sh | bash
+```
+
+After the repair succeeds, return to the bot directory and deploy:
+
+```bash
+cd ~/TOOSII-XD-ULTRA
+npm run deploy
+```
+
+#### Manual linker repair commands
+
+If you prefer to run the commands manually, use this sequence in Termux:
+
+```bash
+cd ~/TOOSII-XD-ULTRA
+unset LD_LIBRARY_PATH
+unset LD_PRELOAD
+apt update
+dpkg --configure -a || true
+apt --fix-broken install -y
+apt full-upgrade -y
+apt install --reinstall nodejs-lts libc++ -y
+hash -r
+node --version
+npm --version
+npm run deploy
+```
+
+If `node` still cannot start, collect diagnostics without sharing secrets:
+
+```bash
+termux-info
+printf 'LD_LIBRARY_PATH=%s\n' "$LD_LIBRARY_PATH"
+printf 'LD_PRELOAD=%s\n' "$LD_PRELOAD"
+```
+
+Do not delete the bot directory or reinstall Termux until the repair path has been tried. If a full Termux reinstall becomes necessary, back up `.env`, `session/`, `data/`, and `logs/` first.
+
 1. **Upload** this repo as a ZIP to your hosting panel (KataBump, Render, Koyeb, Railway, Heroku, a VPS, or Termux)
 2. **Edit the included `.env`** — fill in `OWNER_NUMBER` (+ `SESSION_ID`, or leave empty to pair via console code)
 3. **Install & start:**
@@ -181,6 +239,6 @@ Run `.menu` inside WhatsApp to see the full, always-current list.
 
 If TOOSII-XD-ULTRA helps you, **star this repo** — it genuinely helps others find it.
 
-**🌐 [toosiitech.org](https://www.toosiitech.org/)** · Session generator: [toosiitechdevelopertools.zone.id/session](https://toosiitechdevelopertools.zone.id/session)
+**🌐 [toosiitech.org](https://toosiitech.org/)** · Session generator: [toosiitechdevelopertools.zone.id/session](https://toosiitechdevelopertools.zone.id/session)
 
 </div>
