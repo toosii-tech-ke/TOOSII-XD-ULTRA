@@ -202,6 +202,44 @@ printf 'LD_PRELOAD=%s\n' "$LD_PRELOAD"
 
 Do not delete the bot directory or reinstall Termux until the repair path has been tried. If a full Termux reinstall becomes necessary, back up `.env`, `session/`, `data/`, and `logs/` first.
 
+### 🧰 One-click Termux setup wizard
+
+Use the interactive wizard to configure the owner number, optional `SESSION_ID`, bot name, and command prefix without editing `.env` manually:
+
+```bash
+cd ~/TOOSII-XD-ULTRA
+bash scripts/setup-termux.sh
+```
+
+The wizard backs up the current `.env`, validates the owner number, hides the session input while you paste it, preserves existing values when you press Enter, creates the required state directories, and can start the bot through the health monitor when setup is complete. It does not print or expose the session ID.
+
+If you do not have the repository yet, clone it first:
+
+```bash
+git clone --depth=1 https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA.git ~/TOOSII-XD-ULTRA
+cd ~/TOOSII-XD-ULTRA
+bash scripts/setup-termux.sh
+```
+
+### ♻️ Termux health monitor and automatic restart
+
+Start the bot under the monitor after configuration:
+
+```bash
+cd ~/TOOSII-XD-ULTRA
+bash scripts/termux-health-monitor.sh
+```
+
+The monitor restarts the bot when the launcher exits unexpectedly, waits progressively longer after repeated crashes, resets the delay after a stable run, records each bot run under `logs/bot-YYYYMMDD-HHMMSS.log`, and writes monitor events to `logs/termux-health-monitor.log`. It allows only one monitor instance at a time and forwards **Ctrl+C** so the bot can be stopped intentionally.
+
+If Node.js itself is broken, the monitor automatically attempts `scripts/repair-termux-node.sh` before retrying. Disable that behavior for manual repair with:
+
+```bash
+TERMUX_MONITOR_REPAIR_NODE=false bash scripts/termux-health-monitor.sh
+```
+
+Optional tuning variables are `TERMUX_MONITOR_MIN_BACKOFF` (default `5` seconds), `TERMUX_MONITOR_MAX_BACKOFF` (default `60` seconds), and `TERMUX_MONITOR_STABLE_SECONDS` (default `300` seconds). The monitor never deletes `.env`, `session/`, `data/`, or `logs/`.
+
 1. **Upload** this repo as a ZIP to your hosting panel (KataBump, Render, Koyeb, Railway, Heroku, a VPS, or Termux)
 2. **Edit the included `.env`** — fill in `OWNER_NUMBER` (+ `SESSION_ID`, or leave empty to pair via console code)
 3. **Install & start:**
