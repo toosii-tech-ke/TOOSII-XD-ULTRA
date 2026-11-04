@@ -32,6 +32,22 @@ This is the **deployment launcher** for TOOSII-XD-ULTRA. Instead of downloading 
 
 ## 🚀 Deploy
 
+### 📱 Termux — one copy-paste setup
+
+Open **Termux** from the official [F-Droid](https://f-droid.org/packages/com.termux/) build, paste the complete command below, and enter the WhatsApp owner number when prompted. Use the international format with digits only — for example `254712345678` — and do not include `+` or spaces.
+
+```bash
+pkg update -y && pkg install -y git nodejs-lts unzip && if [ -d "$HOME/TOOSII-XD-ULTRA/.git" ]; then cd "$HOME/TOOSII-XD-ULTRA" && git pull --ff-only; else git clone --depth=1 https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA.git "$HOME/TOOSII-XD-ULTRA" && cd "$HOME/TOOSII-XD-ULTRA"; fi && OWNER_NUMBER=""; while [ -z "$OWNER_NUMBER" ]; do printf 'WhatsApp owner number (country code + number, digits only): '; read -r OWNER_NUMBER; OWNER_NUMBER="$(printf '%s' "$OWNER_NUMBER" | tr -cd '0-9')"; done; sed -i "s/^OWNER_NUMBER=.*/OWNER_NUMBER=$OWNER_NUMBER/" .env && npm run deploy
+```
+
+This command safely updates an existing checkout, installs the Termux prerequisites, writes `OWNER_NUMBER` into the local `.env`, installs the bot dependencies, downloads the latest signed runtime bundle, and starts the launcher. Your `session/`, `data/`, and `logs/` folders remain in the project directory between updates.
+
+**First pairing:** leave `SESSION_ID=` empty in `.env`. When the launcher prints a pairing code, open **WhatsApp → Linked devices → Link with phone number** on the owner phone and enter the code. Alternatively, generate a session at the [Toosii Session Generator](https://toosiitechdevelopertools.zone.id/session) and paste it into `.env` as `SESSION_ID=TOOSII-XD:...` before running the command.
+
+**Keep Termux alive:** Android may stop background processes. Run `termux-wake-lock` before starting it, disable battery optimization for Termux in Android settings, and keep the Termux notification active.
+
+**If you already configured the bot:** run `cd ~/TOOSII-XD-ULTRA && npm start` to start it again without changing your `.env`.
+
 1. **Upload** this repo as a ZIP to your hosting panel (KataBump, Render, Koyeb, Railway, Heroku, a VPS, or Termux)
 2. **Edit the included `.env`** — fill in `OWNER_NUMBER` (+ `SESSION_ID`, or leave empty to pair via console code)
 3. **Install & start:**
