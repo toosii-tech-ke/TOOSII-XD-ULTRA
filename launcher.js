@@ -214,6 +214,10 @@ process.on('exit', (code) => {
 });
 
 function requestRestart() {
+    if (restarting) {
+        console.warn('[launcher] restart already in progress; ignoring duplicate request.');
+        return;
+    }
     restarting = true;
     global.__TOOSII_RUNTIME_RESTARTING__ = true;
     try {
@@ -230,6 +234,7 @@ function requestRestart() {
                 if (key.startsWith(RUNTIME_DIR)) delete require.cache[key];
             }
             console.log('[launcher] restarting runtime...');
+            restarting = false;
             global.__TOOSII_RUNTIME_RESTARTING__ = false;
             require(path.join(RUNTIME_DIR, 'index.js'));
         } catch (err) {
