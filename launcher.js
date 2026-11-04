@@ -215,6 +215,12 @@ process.on('exit', (code) => {
 
 function requestRestart() {
     restarting = true;
+    global.__TOOSII_RUNTIME_RESTARTING__ = true;
+    try {
+        global.__TOOSII_RUNTIME_CLEANUP__?.();
+    } catch (err) {
+        console.warn('[launcher] runtime cleanup warning:', err.message);
+    }
     // Give logs a beat to flush, then re-run the whole runtime fresh in
     // this process. Module cache is wiped so the new runtime/ (e.g. right
     // after an update) is picked up cleanly.
@@ -224,6 +230,7 @@ function requestRestart() {
                 if (key.startsWith(RUNTIME_DIR)) delete require.cache[key];
             }
             console.log('[launcher] restarting runtime...');
+            global.__TOOSII_RUNTIME_RESTARTING__ = false;
             require(path.join(RUNTIME_DIR, 'index.js'));
         } catch (err) {
             console.error('[launcher] runtime restart failed:', err.message);
