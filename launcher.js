@@ -84,11 +84,26 @@ function sha256(file) {
     return require('crypto').createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 }
 
+function replaceRuntime(bundleDir) {
+    // renameSync is atomic and fast, but fails with EXDEV when the temporary
+    // download directory and the panel volume are mounted on different
+    // filesystems (common on Pterodactyl/Bot-Hosting containers). Fall back
+    // to a recursive copy so updates work without requiring /tmp relocation.
+    fs.rmSync(RUNTIME_DIR, { recursive: true, force: true });
+    try {
+        fs.renameSync(bundleDir, RUNTIME_DIR);
+    } catch (err) {
+        if (err?.code !== 'EXDEV') throw err;
+        log('cross-device runtime move detected; using copy fallback');
+        fs.cpSync(bundleDir, RUNTIME_DIR, { recursive: true, force: true, errorOnExist: false });
+        fs.rmSync(bundleDir, { recursive: true, force: true });
+    }
+}
+
 function install(bundleDir) {
     // Replace the runtime wholesale — user state is not inside runtime/, so
     // there is nothing to preserve here by definition.
-    fs.rmSync(RUNTIME_DIR, { recursive: true, force: true });
-    fs.renameSync(bundleDir, RUNTIME_DIR);
+    replaceRuntime(bundleDir);
 
     // Remove the bundle's node_modules: the panel installs the real
     // dependencies at the root (from the launcher's package.json), and a
