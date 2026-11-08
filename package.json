@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "deploy": "npm install --no-audit --no-fund --legacy-peer-deps && node index.js"
+    "deploy": "npm install --ignore-scripts --no-audit --no-fund --legacy-peer-deps --maxsockets 3 && node index.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc14",

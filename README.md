@@ -148,6 +148,8 @@ npm run deploy
 
 The launcher downloads the latest runtime release and verifies its SHA-256 checksum. If GitHub is temporarily unavailable, retry later. Do not download a random ZIP from an unofficial mirror.
 
+On shared panels, the launcher intentionally installs npm packages with lifecycle scripts disabled. This prevents an old nested native package such as `wa-sticker-formatter`'s `sharp` from trying to compile with an incompatible panel Node version. The launcher then performs a best-effort native-module check; a failed optional image module must not prevent the WhatsApp bot from starting.
+
 </details>
 
 **Still stuck?** Share the relevant lines from `logs/auth-start.log` or `logs/auth-recovery.log`, but remove `SESSION_ID`, phone numbers, cookies, and private tokens before sharing.

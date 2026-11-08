@@ -178,7 +178,7 @@ function ensureDependencies() {
     if (!fs.existsSync(probe)) {
         log('dependencies missing — installing (one-time, may take a few minutes)...');
         try {
-            execSync('npm install --no-audit --no-fund --legacy-peer-deps --maxsockets 3', {
+            execSync('npm install --ignore-scripts --no-audit --no-fund --legacy-peer-deps --maxsockets 3', {
                 cwd: ROOT, stdio: 'inherit', timeout: 900000
             });
             log('dependencies installed');
