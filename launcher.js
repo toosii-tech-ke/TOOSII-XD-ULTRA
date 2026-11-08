@@ -24,7 +24,7 @@ const STATE_DIRS = ['node_modules', 'data', 'session', 'logs'];
 
 function log(...a) { console.log('[launcher]', ...a); }
 
-const LAUNCHER_VERSION = '2'; // bump when launcher.js itself changes
+const LAUNCHER_VERSION = '3'; // bump when launcher.js itself changes
 const LAUNCHER_TAG_FILE = path.join(ROOT, '.launcher-version');
 
 // Self-update: the bundle ships a copy of the latest launcher.js. On boot,
@@ -75,9 +75,34 @@ async function fetchLatest() {
 }
 
 async function download(url, dest) {
-    const res = await fetch(url, { signal: AbortSignal.timeout(300000) });
-    if (!res.ok) throw new Error(`bundle download HTTP ${res.status}`);
-    fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+    const maxAttempts = 4;
+    let lastError;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+            const res = await fetch(url, {
+                headers: {
+                    'User-Agent': 'toosii-xd-launcher',
+                    'Accept': 'application/octet-stream'
+                },
+                signal: AbortSignal.timeout(300000)
+            });
+            if (!res.ok) {
+                const retryable = [408, 425, 429, 500, 502, 503, 504].includes(res.status);
+                throw Object.assign(new Error(`bundle download HTTP ${res.status}`), { retryable });
+            }
+            const bytes = Buffer.from(await res.arrayBuffer());
+            if (!bytes.length) throw Object.assign(new Error('bundle download was empty'), { retryable: true });
+            fs.writeFileSync(dest, bytes);
+            return;
+        } catch (err) {
+            lastError = err;
+            if (attempt >= maxAttempts || err?.retryable === false) break;
+            const delayMs = Math.min(30000, 3000 * (2 ** (attempt - 1)));
+            log(`bundle download attempt ${attempt}/${maxAttempts} failed: ${err.message}; retrying in ${Math.ceil(delayMs / 1000)}s`);
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+    }
+    throw lastError;
 }
 
 function sha256(file) {
@@ -205,6 +230,15 @@ async function main() {
         install(path.join(tmp, inner));
         fs.writeFileSync(RUNTIME_MARKER, JSON.stringify({ version: latest.version, at: new Date().toISOString() }));
         log('updated to', latest.version);
+    } catch (err) {
+        // A release CDN can briefly return 502/504 while the asset propagates.
+        // Never take a previously working bot offline for that transient fault.
+        if (fs.existsSync(path.join(RUNTIME_DIR, 'index.js'))) {
+            log('new bundle unavailable:', err.message);
+            log('keeping the last working runtime at', local, 'and retrying on the next restart');
+            return start();
+        }
+        throw err;
     } finally {
         fs.rmSync(tmp, { recursive: true, force: true });
     }
