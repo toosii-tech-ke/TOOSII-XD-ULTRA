@@ -125,13 +125,23 @@ function install(bundleDir) {
     }
 
     // Native module repair for panels that skip install scripts.
-    try { execSync('node scripts/postinstall.js', { cwd: RUNTIME_DIR, stdio: 'ignore', timeout: 300000 }); } catch {}
+    repairNativeModules();
 }
 
 // The runtime's dependencies are declared in THIS launcher's package.json, so
 // the panel's own "npm install" step (fast, cached, runs before startup)
 // installs them at the root. The launcher only installs inside runtime/ as a
 // last-resort fallback when the panel skipped its install step entirely.
+function repairNativeModules() {
+    const repairScript = path.join(RUNTIME_DIR, 'scripts', 'postinstall.js');
+    if (!fs.existsSync(repairScript)) return;
+    try {
+        execSync('node scripts/postinstall.js', { cwd: RUNTIME_DIR, stdio: 'inherit', timeout: 300000 });
+    } catch (err) {
+        console.warn('[launcher] native module repair skipped:', err.message);
+    }
+}
+
 function ensureDependencies() {
     // A stale bundled node_modules from an earlier install SHADOWS the root
     // install (Node resolves from the nearest node_modules first) and can hold
@@ -140,17 +150,22 @@ function ensureDependencies() {
     // reach install().
     fs.rmSync(path.join(RUNTIME_DIR, 'node_modules'), { recursive: true, force: true });
     const probe = path.join(ROOT, 'node_modules', '@whiskeysockets', 'baileys', 'package.json');
-    if (fs.existsSync(probe)) return;
-    log('dependencies missing — installing (one-time, may take a few minutes)...');
-    try {
-        execSync('npm install --no-audit --no-fund --legacy-peer-deps --maxsockets 3', {
-            cwd: ROOT, stdio: 'inherit', timeout: 900000
-        });
-        log('dependencies installed');
-    } catch (err) {
-        console.error('[launcher] dependency install failed:', err.message);
-        console.error('[launcher] the bot will likely fail to start — check panel network/npm settings');
+    if (!fs.existsSync(probe)) {
+        log('dependencies missing — installing (one-time, may take a few minutes)...');
+        try {
+            execSync('npm install --no-audit --no-fund --legacy-peer-deps --maxsockets 3', {
+                cwd: ROOT, stdio: 'inherit', timeout: 900000
+            });
+            log('dependencies installed');
+        } catch (err) {
+            console.error('[launcher] dependency install failed:', err.message);
+            console.error('[launcher] the bot will likely fail to start — check panel network/npm settings');
+        }
     }
+    // The panel may report npm install as complete while optional native
+    // postinstall scripts were skipped. Repair canvas/sharp on every start,
+    // not only after a runtime download.
+    repairNativeModules();
 }
 
 function ensureStateDirs() {
