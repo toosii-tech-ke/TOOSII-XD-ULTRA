@@ -60,8 +60,15 @@ async function fetchLatest() {
     // The bundle ships as a release asset on the public repo — a plain
     // HTTPS URL, no token, no API hop.
     const res = await fetch(
-        'https://api.github.com/repos/toosii-tech-ke/TOOSII-XD-ULTRA/releases/latest',
-        { headers: { 'User-Agent': 'toosii-xd-launcher' }, signal: AbortSignal.timeout(60000) }
+        `https://api.github.com/repos/toosii-tech-ke/TOOSII-XD-ULTRA/releases/latest?launcher_ts=${Date.now()}`,
+        {
+            headers: {
+                'User-Agent': 'toosii-xd-launcher',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            },
+            signal: AbortSignal.timeout(60000)
+        }
     );
     if (!res.ok) throw new Error(`release check HTTP ${res.status}`);
     const rel = await res.json();
@@ -69,7 +76,7 @@ async function fetchLatest() {
     if (!asset) throw new Error('no bundle published yet');
     return {
         version: rel.tag_name,
-        url: asset.browser_download_url,
+        url: `${asset.browser_download_url}${asset.browser_download_url.includes('?') ? '&' : '?'}launcher_ts=${Date.now()}`,
         sha256: (rel.body || '').match(/sha256:\s*([a-f0-9]{64})/i)?.[1] || null,
     };
 }
@@ -205,6 +212,7 @@ async function main() {
     if (process.env.LAUNCHER_SKIP_UPDATE === 'true') return start();
 
     const local = readLocalVersion();
+    const forceUpdate = process.env.FORCE_RUNTIME_UPDATE === 'true' || process.env.FORCE_RUNTIME_UPDATE === '1';
     let latest;
     try {
         latest = await fetchLatest();
@@ -213,7 +221,8 @@ async function main() {
         if (fs.existsSync(path.join(RUNTIME_DIR, 'index.js'))) return start();
         throw err; // nothing to run at all
     }
-    if (String(latest.version) === String(local) && fs.existsSync(path.join(RUNTIME_DIR, 'index.js'))) {
+    log('local runtime:', local, '| latest release:', latest.version, forceUpdate ? '| forced update' : '');
+    if (!forceUpdate && String(latest.version) === String(local) && fs.existsSync(path.join(RUNTIME_DIR, 'index.js'))) {
         log('up to date at', local);
         return start();
     }
