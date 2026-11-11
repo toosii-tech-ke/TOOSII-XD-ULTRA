@@ -2,6 +2,12 @@
 
 <img src="media/bot-logo.jpg" width="180" alt="TOOSII-XD-ULTRA logo"/>
 
+<p>
+  <a href="https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA">
+    <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=22&duration=2800&pause=900&color=25D366&center=true&vCenter=true&width=760&lines=Multi-platform+WhatsApp+automation;500%2B+commands+for+real-world+use;AI+%C2%B7+media+%C2%B7+groups+%C2%B7+stickers+%C2%B7+utilities" alt="Multi-platform WhatsApp automation" />
+  </a>
+</p>
+
 # TOOSII-XD-ULTRA
 
 **A multi-platform, self-hosted WhatsApp automation bot powered by Baileys.**
