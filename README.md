@@ -11,7 +11,7 @@ Railway · Render · Heroku · VPS · Docker · Hosting Panels · Termux
 [![Deploy](https://img.shields.io/badge/Deploy-Railway%20%7C%20Render%20%7C%20Heroku-2EA043)](#-cloud-deployment)
 [![Build](https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/toosii-tech-ke/TOOSII-XD-ULTRA?label=License)](https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA)
-[![Contributors](https://img.shields.io/github/contributors/toosii-tech-ke/TOOSII-XD-ULTRA?label=Active%20contributors)](https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA/graphs/contributors)
+[![Contributors](https://img.shields.io/github/contributors/toosii-tech-ke/TOOSII-XD-ULTRA?label=Contributors)](https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA/graphs/contributors)
 [![Runtime](https://img.shields.io/badge/Runtime-Node.js%2020%2B-339933?logo=node.js&logoColor=white)](#-requirements)
 [![WhatsApp](https://img.shields.io/badge/WhatsApp-Multi--Device-25D366?logo=whatsapp&logoColor=white)](#-what-you-get)
 [![Website](https://img.shields.io/badge/Website-toosiitech.org-8B5CF6)](https://www.toosiitech.org/)
@@ -91,21 +91,6 @@ For automatic restart after crashes:
 cd ~/TOOSII-XD-ULTRA && bash scripts/termux-health-monitor.sh
 ```
 
-## ⚙️ Developer reaction scopes
-
-The owner-only `.reactdev` automation can react to configured developer messages:
-
-```text
-.reactdev global on       # DMs and groups
-.reactdev dms on          # Private chats only
-.reactdev groups on       # Groups only
-.reactdev off             # Disable
-.reactdev emoji 🔥        # Change emoji
-.reactdev                 # Show status
-```
-
-`.reactdev on` remains a shortcut for global mode. Ordinary users are not auto-reacted to by this feature.
-
 ## 🔐 Pairing and recovery
 
 Leave `SESSION_ID` empty to pair from the service console, or generate a session in the [Session Generator](https://toosiitechdevelopertools.zone.id/session). Keep session strings private.
@@ -113,6 +98,10 @@ Leave `SESSION_ID` empty to pair from the service console, or generate a session
 If the owner number is wrong, edit `OWNER_NUMBER` in `.env` and restart. Do not delete the session unless WhatsApp authentication has actually expired or been revoked.
 
 For detailed repair scripts and recovery commands, see the repository’s `scripts/` directory and the latest [GitHub issues](https://github.com/toosii-tech-ke/TOOSII-XD-ULTRA/issues).
+
+## 📄 License
+
+This repository currently has no declared open-source license. Unless a separate written permission says otherwise, the source and branding remain all rights reserved. Contact Toosii Tech before redistributing or modifying the project.
 
 ## 💬 Commands
 
