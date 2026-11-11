@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate launcher
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check index.js
+          node --check launcher.js
+
+      - name: Validate shell scripts
+        run: |
+          if [ -d scripts ]; then
+            find scripts -type f -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
+          else
+            echo "No shell scripts in the public launcher repository; skipping."
+          fi
