@@ -19,12 +19,13 @@
 
 ## ✨ What is this repo?
 
-This is the **deployment launcher** for TOOSII-XD-ULTRA. Instead of downloading the full bot source, you deploy this lightweight launcher — it does the rest:
+This is the **production deployment launcher** for TOOSII-XD-ULTRA, a self-hosted, multi-device WhatsApp automation platform. Instead of downloading the full private bot source, you deploy this lightweight launcher — it securely retrieves and runs the latest published runtime for you:
 
 - 📡 **Fetches the latest runtime** from the Toosii Tech distribution API on every start
 - 🔄 **Self-updating** — new bot versions arrive automatically, no manual redeploys
 - 🔐 **Keeps your data safe** — session, `.env`, data and logs survive every update untouched
 - ⚡ **One command to run** — `node index.js` (or `node launcher.js` — both work)
+- 🧩 **Professional automation** — configurable developer reactions, status tools, moderation, media, AI, and group utilities
 
 > 💡 The launcher pairs with the [Session Generator](https://toosiitechdevelopertools.zone.id/session) — pair your WhatsApp account in the browser and paste the `TOOSII-XD:...` string into `.env`.
 
@@ -266,7 +267,7 @@ The bot starts and stays current from here on — the launcher handles the rest.
 
 ## 💬 Commands
 
-**484 commands across 15 categories** — downloads, AI, group moderation, stickers, games, economy, guards and more.
+**500+ commands across 15 categories** — downloads, AI, group moderation, stickers, games, economy, guards and more.
 
 Run `.menu` inside WhatsApp to see the full, always-current list.
 
@@ -278,6 +279,23 @@ Run `.menu` inside WhatsApp to see the full, always-current list.
 | 👑 Groups | `.ban`, `.warn`, `.hidetag`, `.poll`, welcome/goodbye |
 | 🎨 Media | Sticker packs, logo maker, audio FX |
 | 🎮 Fun | Wordle, blackjack, slots, wallets & leaderboards |
+
+### ⚙️ Developer reaction scopes
+
+The owner-only `.reactdev` automation can react to trusted developer messages with a configurable emoji. Choose whether it runs in every chat, private DMs only, or groups only:
+
+```text
+.reactdev global on       # Enable in DMs and groups
+.reactdev global off      # Disable global mode
+.reactdev dms on          # Enable in private chats only
+.reactdev dms off
+.reactdev groups on       # Enable in groups only
+.reactdev groups off
+.reactdev emoji 🔥         # Change the reaction emoji
+.reactdev                 # Show the current state and scope
+```
+
+For compatibility, `.reactdev on` still enables global mode and `.reactdev off` disables the automation. Only configured developer contacts can trigger these reactions; ordinary users are never auto-reacted to by this feature.
 
 ---
 
